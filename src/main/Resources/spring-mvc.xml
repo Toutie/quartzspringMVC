@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	 	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-4.2.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+    <!--扫包-->
+    <context:component-scan base-package="com.etoak"/>
+    <!--mvc注解-->
+    <mvc:annotation-driven/>
+    <!--静态资源-->
+    <mvc:default-servlet-handler/>
+    <!-- 数据源 -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql:///quartz?useUnicode=true&amp;allowPublicKeyRetrieval=true&amp;characterEncoding=utf8&amp;useSSL=false&amp;serverTimezone=GMT%2B8" />
+        <property name="username" value="root"/>
+        <property name="password" value="3428238749"/>
+    </bean>
+    <!--事务-->
+    <bean id="tx" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!--JobDetailFactoryBean-->
+    <bean id="jobDetail" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobClass" value="com.etoak.job.OrderJob"/>
+        <property name="durability" value="true"/>
+        <property name="name" value="orderJOb"/>
+        <property name="group" value="orderGroup"/>
+    </bean>
+
+    <bean id="trigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail" ref="jobDetail"/>
+        <property name="cronExpression" value="0/10 * * ? * *"/>
+        <property name="name" value="orderTrigger"/>
+        <property name="group" value="orderGroup"/>
+    </bean>
+    <bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                <ref bean="trigger"/>
+            </list>
+        </property>
+        <property name="dataSource" ref="dataSource"/>
+        <property name="transactionManager" ref="tx"/>
+        <property name="configLocation" value="classpath:quartz.properties"/>
+        <property name="jobFactory">
+            <bean class="com.etoak.factory.MvcJobFactory"/>
+        </property>
+    </bean>
+</beans>
